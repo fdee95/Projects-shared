@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cola Zero Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%A4%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #FBF3E7;
+    --surface: #FFFFFF;
+    --ink: #2B1710;
+    --muted: #8C6F5C;
+    --line: rgba(43, 23, 16, 0.12);
+    --accent: #D62839;
+    --accent-strong: #B81F2E;
+    --accent-ink: #FFFFFF;
+    --shadow: rgba(43, 23, 16, 0.20);
+
+    --font-display: -apple-system, "SF Pro Rounded", "Segoe UI Rounded", "Nunito", system-ui, sans-serif;
+    --font-body: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #170F0A;
+      --surface: #241810;
+      --ink: #F6ECDF;
+      --muted: #C2A48C;
+      --line: rgba(246, 236, 223, 0.14);
+      --accent: #FF4B5C;
+      --accent-strong: #FF2E42;
+      --accent-ink: #1B0C0F;
+      --shadow: rgba(0, 0, 0, 0.55);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #170F0A;
+    --surface: #241810;
+    --ink: #F6ECDF;
+    --muted: #C2A48C;
+    --line: rgba(246, 236, 223, 0.14);
+    --accent: #FF4B5C;
+    --accent-strong: #FF2E42;
+    --accent-ink: #1B0C0F;
+    --shadow: rgba(0, 0, 0, 0.55);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  .page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    gap: clamp(1rem, 4vh, 2.5rem);
+    padding: max(1.75rem, env(safe-area-inset-top)) 1.5rem max(1.75rem, env(safe-area-inset-bottom));
+    background:
+      radial-gradient(60% 45% at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+      var(--bg);
+    text-align: center;
+  }
+
+  .eyebrow-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .eyebrow {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 0.01em;
+  }
+
+  .counter-wrap {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .bubbles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .bubbles span {
+    position: absolute;
+    bottom: -10%;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    left: var(--x);
+    animation: rise var(--dur) ease-in infinite;
+    animation-delay: var(--delay);
+  }
+
+  @keyframes rise {
+    0% { transform: translateY(0) scale(0.8); opacity: 0; }
+    15% { opacity: 0.5; }
+    90% { opacity: 0.25; }
+    100% { transform: translateY(-70vh) scale(1.1); opacity: 0; }
+  }
+
+  .count-display {
+    padding: 0.25rem 0.75rem;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  #countValue {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(5.5rem, 26vw, 10rem);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+    display: inline-block;
+  }
+
+  #countValue.pulse {
+    animation: pulse 0.32s ease;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.12); color: var(--accent); }
+    100% { transform: scale(1); }
+  }
+
+  .caption {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    min-height: 1.2em;
+  }
+
+  .controls {
+    width: 100%;
+    max-width: 28rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .button-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+    width: 100%;
+  }
+
+  .btn-step {
+    appearance: none;
+    border: 2px solid transparent;
+    padding: 1.5rem 1rem;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .btn-step:active {
+    transform: translateY(2px) scale(0.99);
+  }
+
+  .btn-step:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  .btn-minus {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-plus {
+    background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+    color: var(--accent-ink);
+    box-shadow: 0 10px 24px -8px var(--shadow);
+  }
+
+  .btn-plus:active {
+    box-shadow: 0 4px 14px -6px var(--shadow);
+  }
+
+  .btn-symbol {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 2.6rem;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bubbles { display: none; }
+    #countValue.pulse { animation: none; }
+    .btn-step:active { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="eyebrow-wrap">
+    <p class="eyebrow">Cola Zero Tracker</p>
+    <p class="subtitle">Pauschalurlaub-Edition · Türkei 🇹🇷</p>
+    <p class="subtitle">0,3l Glasflaschen</p>
+  </header>
+
+  <main class="counter-wrap">
+    <div class="bubbles" aria-hidden="true" id="bubbles"></div>
+
+    <div class="count-display" aria-live="polite">
+      <span id="countValue">0</span>
+    </div>
+
+    <p class="caption" id="caption">Noch keine Flasche protokolliert</p>
+  </main>
+
+  <footer class="controls">
+    <div class="button-row">
+      <button type="button" class="btn-step btn-minus" id="minusBtn" aria-label="1 Flasche abziehen">
+        <span class="btn-symbol">−1</span>
+      </button>
+      <button type="button" class="btn-step btn-plus" id="plusBtn" aria-label="1 Flasche hinzufügen">
+        <span class="btn-symbol">+1</span>
+      </button>
+    </div>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var STORAGE_KEY = 'colaZeroTracker.v1';
+
+    var countValueEl = document.getElementById('countValue');
+    var captionEl = document.getElementById('caption');
+    var minusBtn = document.getElementById('minusBtn');
+    var plusBtn = document.getElementById('plusBtn');
+    var bubblesEl = document.getElementById('bubbles');
+
+    function readHashCount() {
+      var m = /^#(-?\d+)$/.exec(location.hash);
+      return m ? parseInt(m[1], 10) : null;
+    }
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (typeof parsed.count === 'number') {
+            return { count: parsed.count, lastAction: parsed.lastAction || null };
+          }
+        }
+      } catch (e) {}
+      return { count: 0, lastAction: null };
+    }
+
+    var state = loadState();
+    var hashCount = readHashCount();
+    if (hashCount !== null && hashCount !== state.count) {
+      state.count = hashCount;
+      state.lastAction = state.lastAction || Date.now();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+      try {
+        history.replaceState(null, '', '#' + state.count);
+      } catch (e) {}
+    }
+
+    function formatRelative(ts) {
+      if (!ts) return 'Noch keine Flasche protokolliert';
+      var diffMs = Date.now() - ts;
+      var diffMin = Math.floor(diffMs / 60000);
+      if (diffMin < 1) return 'Zuletzt protokolliert: gerade eben';
+      if (diffMin === 1) return 'Zuletzt protokolliert: vor 1 Minute';
+      if (diffMin < 60) return 'Zuletzt protokolliert: vor ' + diffMin + ' Minuten';
+      var diffHr = Math.floor(diffMin / 60);
+      if (diffHr === 1) return 'Zuletzt protokolliert: vor 1 Stunde';
+      if (diffHr < 24) return 'Zuletzt protokolliert: vor ' + diffHr + ' Stunden';
+      var d = new Date(ts);
+      return 'Zuletzt protokolliert: ' + d.toLocaleDateString('de-DE') + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function render(opts) {
+      opts = opts || {};
+      countValueEl.textContent = state.count;
+      captionEl.textContent = formatRelative(state.lastAction);
+
+      if (opts.pulse) {
+        countValueEl.classList.remove('pulse');
+        void countValueEl.offsetWidth;
+        countValueEl.classList.add('pulse');
+      }
+    }
+
+    function applyChange(delta) {
+      state.count += delta;
+      state.lastAction = Date.now();
+      saveState();
+      render({ pulse: true });
+      spawnBubbles();
+    }
+
+    function spawnBubbles() {
+      var count = 5;
+      for (var i = 0; i < count; i++) {
+        var b = document.createElement('span');
+        var size = (Math.random() * 10 + 6).toFixed(0) + 'px';
+        var x = (Math.random() * 80 + 10).toFixed(0) + '%';
+        var dur = (Math.random() * 1.2 + 1.4).toFixed(2) + 's';
+        var delay = (Math.random() * 0.3).toFixed(2) + 's';
+        b.style.setProperty('--size', size);
+        b.style.setProperty('--x', x);
+        b.style.setProperty('--dur', dur);
+        b.style.setProperty('--delay', delay);
+        bubblesEl.appendChild(b);
+        (function (el, dur2, delay2) {
+          setTimeout(function () {
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }, (parseFloat(dur2) + parseFloat(delay2)) * 1000 + 100);
+        })(b, dur, delay);
+      }
+    }
+
+    minusBtn.addEventListener('click', function () {
+      applyChange(-1);
+    });
+
+    plusBtn.addEventListener('click', function () {
+      applyChange(1);
+    });
+
+    setInterval(function () {
+      captionEl.textContent = formatRelative(state.lastAction);
+    }, 30000);
+
+    saveState();
+    render();
+  })();
+</script>
+</body>
+</html>
