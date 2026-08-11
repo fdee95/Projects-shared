@@ -72,12 +72,13 @@
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    gap: clamp(1rem, 4vh, 2.5rem);
-    padding: max(1.75rem, env(safe-area-inset-top)) 1.5rem max(1.75rem, env(safe-area-inset-bottom));
+    gap: clamp(0.75rem, 3vh, 1.5rem);
+    padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom));
     background:
       radial-gradient(60% 45% at 50% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
       var(--bg);
     text-align: center;
+    overflow-y: auto;
   }
 
   .eyebrow-wrap {
@@ -110,7 +111,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
+    gap: clamp(1rem, 3vh, 1.75rem);
     width: 100%;
   }
 
@@ -140,22 +141,42 @@
     100% { transform: translateY(-70vh) scale(1.1); opacity: 0; }
   }
 
-  .count-display {
-    padding: 0.25rem 0.75rem;
+  .sections {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 3vh, 1.75rem);
+    width: 100%;
+    max-width: 26rem;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .section-label {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .section-value {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(3rem, 15vw, 4.75rem);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
     color: var(--ink);
     line-height: 1;
   }
 
-  #countValue {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: clamp(5.5rem, 26vw, 10rem);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.03em;
-    display: inline-block;
-  }
-
-  #countValue.pulse {
+  .section-value.pulse {
     animation: pulse 0.32s ease;
   }
 
@@ -165,42 +186,19 @@
     100% { transform: scale(1); }
   }
 
-  .liters {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--accent);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .caption {
-    margin: 0;
-    font-size: 0.85rem;
-    color: var(--muted);
-    min-height: 1.2em;
-  }
-
-  .controls {
-    width: 100%;
-    max-width: 28rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.85rem;
-  }
-
-  .button-row {
+  .section-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.85rem;
+    gap: 0.6rem;
     width: 100%;
+    max-width: 19rem;
   }
 
   .btn-step {
     appearance: none;
     border: 2px solid transparent;
-    padding: 1.5rem 1rem;
-    border-radius: 2rem;
+    padding: 0.95rem 1rem;
+    border-radius: 1.5rem;
     cursor: pointer;
     transition: transform 0.1s ease, box-shadow 0.1s ease;
   }
@@ -223,25 +221,47 @@
   .btn-plus {
     background: linear-gradient(180deg, var(--accent), var(--accent-strong));
     color: var(--accent-ink);
-    box-shadow: 0 10px 24px -8px var(--shadow);
+    box-shadow: 0 8px 20px -8px var(--shadow);
   }
 
   .btn-plus:active {
-    box-shadow: 0 4px 14px -6px var(--shadow);
+    box-shadow: 0 4px 12px -6px var(--shadow);
   }
 
   .btn-symbol {
     display: block;
     font-family: var(--font-display);
     font-weight: 900;
-    font-size: 2.6rem;
+    font-size: 1.9rem;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
   }
 
+  .summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .liters {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .caption {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    min-height: 1.2em;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .bubbles { display: none; }
-    #countValue.pulse { animation: none; }
+    .section-value.pulse { animation: none; }
     .btn-step:active { transform: none; }
   }
 </style>
@@ -252,46 +272,66 @@
   <header class="eyebrow-wrap">
     <p class="eyebrow">Cola Zero Tracker</p>
     <p class="subtitle">Pauschalurlaub-Edition · Türkei 🇹🇷</p>
-    <p class="subtitle">0,3l Glasflaschen</p>
   </header>
 
   <main class="counter-wrap">
     <div class="bubbles" aria-hidden="true" id="bubbles"></div>
 
-    <div class="count-display" aria-live="polite">
-      <span id="countValue">0</span>
+    <div class="sections">
+      <div class="section">
+        <p class="section-label">Flaschen · 0,3l</p>
+        <div class="section-value" id="bottleValue" aria-live="polite">0</div>
+        <div class="section-buttons">
+          <button type="button" class="btn-step btn-minus" id="bottleMinusBtn" aria-label="1 Flasche abziehen">
+            <span class="btn-symbol">−1</span>
+          </button>
+          <button type="button" class="btn-step btn-plus" id="bottlePlusBtn" aria-label="1 Flasche hinzufügen">
+            <span class="btn-symbol">+1</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="section">
+        <p class="section-label">Dosen · 0,2l</p>
+        <div class="section-value" id="canValue" aria-live="polite">0</div>
+        <div class="section-buttons">
+          <button type="button" class="btn-step btn-minus" id="canMinusBtn" aria-label="1 Dose abziehen">
+            <span class="btn-symbol">−1</span>
+          </button>
+          <button type="button" class="btn-step btn-plus" id="canPlusBtn" aria-label="1 Dose hinzufügen">
+            <span class="btn-symbol">+1</span>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <p class="liters" id="liters">0,0 Liter insgesamt</p>
-    <p class="caption" id="caption">Noch keine Flasche protokolliert</p>
+    <div class="summary">
+      <p class="liters" id="liters">0,0 Liter insgesamt</p>
+      <p class="caption" id="caption">Noch nichts protokolliert</p>
+    </div>
   </main>
-
-  <footer class="controls">
-    <div class="button-row">
-      <button type="button" class="btn-step btn-minus" id="minusBtn" aria-label="1 Flasche abziehen">
-        <span class="btn-symbol">−1</span>
-      </button>
-      <button type="button" class="btn-step btn-plus" id="plusBtn" aria-label="1 Flasche hinzufügen">
-        <span class="btn-symbol">+1</span>
-      </button>
-    </div>
-  </footer>
 </div>
 
 <script>
   (function () {
     var STORAGE_KEY = 'colaZeroTracker.v1';
 
-    var countValueEl = document.getElementById('countValue');
+    var bottleValueEl = document.getElementById('bottleValue');
+    var canValueEl = document.getElementById('canValue');
     var litersEl = document.getElementById('liters');
     var captionEl = document.getElementById('caption');
-    var minusBtn = document.getElementById('minusBtn');
-    var plusBtn = document.getElementById('plusBtn');
+    var bottleMinusBtn = document.getElementById('bottleMinusBtn');
+    var bottlePlusBtn = document.getElementById('bottlePlusBtn');
+    var canMinusBtn = document.getElementById('canMinusBtn');
+    var canPlusBtn = document.getElementById('canPlusBtn');
     var bubblesEl = document.getElementById('bubbles');
 
-    function readHashCount() {
-      var m = /^#(-?\d+)$/.exec(location.hash);
-      return m ? parseInt(m[1], 10) : null;
+    function readHashCounts() {
+      var m = /^#b(-?\d+)c(-?\d+)$/.exec(location.hash);
+      if (m) return { bottles: parseInt(m[1], 10), cans: parseInt(m[2], 10) };
+      var legacy = /^#(-?\d+)$/.exec(location.hash);
+      if (legacy) return { bottles: parseInt(legacy[1], 10), cans: 0 };
+      return null;
     }
 
     function loadState() {
@@ -299,18 +339,22 @@
         var raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           var parsed = JSON.parse(raw);
+          if (typeof parsed.bottles === 'number' && typeof parsed.cans === 'number') {
+            return { bottles: parsed.bottles, cans: parsed.cans, lastAction: parsed.lastAction || null };
+          }
           if (typeof parsed.count === 'number') {
-            return { count: parsed.count, lastAction: parsed.lastAction || null };
+            return { bottles: parsed.count, cans: 0, lastAction: parsed.lastAction || null };
           }
         }
       } catch (e) {}
-      return { count: 0, lastAction: null };
+      return { bottles: 0, cans: 0, lastAction: null };
     }
 
     var state = loadState();
-    var hashCount = readHashCount();
-    if (hashCount !== null && hashCount !== state.count) {
-      state.count = hashCount;
+    var hashCounts = readHashCounts();
+    if (hashCounts && (hashCounts.bottles !== state.bottles || hashCounts.cans !== state.cans)) {
+      state.bottles = hashCounts.bottles;
+      state.cans = hashCounts.cans;
       state.lastAction = state.lastAction || Date.now();
     }
 
@@ -319,16 +363,16 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (e) {}
       try {
-        history.replaceState(null, '', '#' + state.count);
+        history.replaceState(null, '', '#b' + state.bottles + 'c' + state.cans);
       } catch (e) {}
     }
 
-    function formatLiters(count) {
-      return (count * 0.3).toFixed(1).replace('.', ',') + ' Liter insgesamt';
+    function formatLiters(bottles, cans) {
+      return (bottles * 0.3 + cans * 0.2).toFixed(1).replace('.', ',') + ' Liter insgesamt';
     }
 
     function formatRelative(ts) {
-      if (!ts) return 'Noch keine Flasche protokolliert';
+      if (!ts) return 'Noch nichts protokolliert';
       var diffMs = Date.now() - ts;
       var diffMin = Math.floor(diffMs / 60000);
       if (diffMin < 1) return 'Zuletzt protokolliert: gerade eben';
@@ -341,24 +385,29 @@
       return 'Zuletzt protokolliert: ' + d.toLocaleDateString('de-DE') + ' ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     }
 
-    function render(opts) {
-      opts = opts || {};
-      countValueEl.textContent = state.count;
-      litersEl.textContent = formatLiters(state.count);
-      captionEl.textContent = formatRelative(state.lastAction);
-
-      if (opts.pulse) {
-        countValueEl.classList.remove('pulse');
-        void countValueEl.offsetWidth;
-        countValueEl.classList.add('pulse');
-      }
+    function pulse(el) {
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
     }
 
-    function applyChange(delta) {
-      state.count += delta;
+    function render(opts) {
+      opts = opts || {};
+      bottleValueEl.textContent = state.bottles;
+      canValueEl.textContent = state.cans;
+      litersEl.textContent = formatLiters(state.bottles, state.cans);
+      captionEl.textContent = formatRelative(state.lastAction);
+
+      if (opts.pulse === 'bottle') pulse(bottleValueEl);
+      if (opts.pulse === 'can') pulse(canValueEl);
+    }
+
+    function applyChange(kind, delta) {
+      if (kind === 'bottle') state.bottles += delta;
+      else state.cans += delta;
       state.lastAction = Date.now();
       saveState();
-      render({ pulse: true });
+      render({ pulse: kind });
       spawnBubbles();
     }
 
@@ -383,13 +432,10 @@
       }
     }
 
-    minusBtn.addEventListener('click', function () {
-      applyChange(-1);
-    });
-
-    plusBtn.addEventListener('click', function () {
-      applyChange(1);
-    });
+    bottleMinusBtn.addEventListener('click', function () { applyChange('bottle', -1); });
+    bottlePlusBtn.addEventListener('click', function () { applyChange('bottle', 1); });
+    canMinusBtn.addEventListener('click', function () { applyChange('can', -1); });
+    canPlusBtn.addEventListener('click', function () { applyChange('can', 1); });
 
     setInterval(function () {
       captionEl.textContent = formatRelative(state.lastAction);
