@@ -293,6 +293,20 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
+  .source-pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    align-self: flex-start;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .source-pill:active { background: var(--surface-strong); }
+  .source-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-a); box-shadow: 0 0 6px var(--accent-a); flex-shrink: 0; }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -318,6 +332,10 @@
       <span id="connLabel">Getrennt</span>
     </div>
   </header>
+
+  <a class="source-pill reveal" href="https://github.com/andreknieriem/opentier" target="_blank" rel="noopener">
+    <span class="source-dot"></span>Basiert auf OpenTIER — bestätigter Befehlssatz ↗
+  </a>
 
   <div id="notSupported" class="card warn-card hidden reveal reveal-2">
     <p>Dieser Browser unterstützt <strong>Web Bluetooth</strong> nicht.</p>
@@ -374,7 +392,7 @@
 
   <p class="footnote">
     Diese Seite braucht HTTPS (oder localhost), sonst blockiert der Browser Web Bluetooth.<br>
-    Weitere/experimentelle Befehle ausprobieren? → <a href="test/" style="color:inherit;">Test-Labor</a>
+    Unbestätigte Befehle jenseits von OpenTIER? → <a href="test/" style="color:inherit;">BETA TEST</a>
   </p>
 </main>
 
@@ -426,6 +444,13 @@ const Protocol = {
   //   [6] Sperrstatus: 0 = gesperrt, 1 = entsperrt
   // Achtung: umgekehrte Polarität zum BKSCT-Kommando/-ACK oben (dort ist
   // 0 = entriegelt, 1 = verriegelt).
+  //
+  // Bewusste Abweichung von OpenTIER: MyTierProtocol.kt schneidet dort mit
+  // substringAfter(":") das "BKINF,"-Präfix nicht vollständig ab, wodurch
+  // "BKINF" selbst als data[0] landet und alle Indizes um eins verschoben
+  // sind - gegen obige echte Antwort liefert OpenTIERs eigener Code
+  // Akku=0. Hier wird "+ACK:BKINF," komplett entfernt, damit die Indizes
+  // stimmen.
   parseResponse(text) {
     if (text.includes('+ACK:BKSCT,0')) return { isLocked: false, battery: null };
     if (text.includes('+ACK:BKSCT,1')) return { isLocked: true, battery: null };

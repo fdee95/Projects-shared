@@ -9,6 +9,13 @@ Läuft komplett im Browser über die [Web Bluetooth API](https://developer.mozil
 eine einzige `index.html`, kein Build-Schritt, keine App-Store-Installation
 nötig.
 
+> **Standard:** Diese App (`index.html`) hält sich strikt an
+> [OpenTIER](https://github.com/andreknieriem/opentier) — den Befehlssatz,
+> der bereits genutzt wird und funktioniert. Alles, was darüber hinausgeht
+> (unbestätigte Befehle, unbekannte BLE-Kanäle), läuft ausschließlich im
+> separaten [`test/`-Labor](test/index.html), klar als **Beta Test**
+> gekennzeichnet.
+
 ## Warum
 
 TIER hat die myTIER-App nicht mehr weiterentwickelt. Ohne funktionierende
@@ -60,13 +67,22 @@ Version dieser App hat außerdem die falschen Indizes für Akku/Sperrstatus
 gelesen (Annahme einer variablen Feldreihenfolge, die sich nicht bestätigt
 hat) — das ist inzwischen anhand der obigen Tabelle korrigiert.
 
+**Bewusste Abweichung von OpenTIER:** Dessen `MyTierProtocol.kt` schneidet
+mit `response.substringAfter(":")` das `BKINF,`-Präfix nicht vollständig
+ab — dadurch landet `"BKINF"` selbst als erstes Datenfeld und alle
+folgenden Indizes verschieben sich um eins. Gegen die obige echte
+Forum-Antwort getestet liefert OpenTIERs eigener Code dadurch `Akku = 0`
+statt `57`. Diese App entfernt `"+ACK:BKINF,"` komplett, bevor sie
+splittet, damit die Indizes stimmen — sonst würde der "Standard, der
+funktionieren soll" beim Akkustand nicht funktionieren.
+
 Nur Index 5 und 6 werden aktuell in der UI angezeigt; Geschwindigkeit,
 Trip- und Gesamt-km liegen im Rohtext vor, werden aber nicht ausgewertet.
 
 Diese App (`index.html`) beschränkt sich bewusst auf `BKSCT`/`BKINF` —
 das ist der Stand, der bereits genutzt wird und zuverlässig funktioniert.
 
-## Test-Labor (experimentell)
+## Test-Labor (Beta Test)
 
 Unter [`test/`](test/index.html) liegt eine separate Konsole für alles,
 was (noch) nicht bestätigt ist. Verbindung + abonnierte Kanäle wie hier,

@@ -71,6 +71,19 @@
     border: 1px solid var(--border);
     white-space: nowrap;
   }
+  .beta-badge {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--danger-a);
+    background: color-mix(in srgb, var(--danger-a) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--danger-a) 40%, transparent);
+  }
 
   .warn-banner {
     padding: 0.8rem 0.95rem;
@@ -230,13 +243,17 @@
     <a class="back-link" href="../">← Zur App</a>
   </header>
 
+  <span class="beta-badge">Beta Test — nicht OpenTIER-Standard</span>
+
   <div class="warn-banner">
     <strong>Nur zum Testen, kein Ersatz für die App.</strong> Hier sendest du
     rohe AT-Kommandos direkt an den Scooter — inklusive Befehlen, deren
     Wirkung unbekannt ist (z. B. <code>AT+BKLED</code> oder die Kanäle
     <code>0x2C02–0x2C04</code>). Die normale App unter
-    <a href="../" style="color:inherit;">../</a> nutzt nur bestätigte,
-    bereits genutzte Kommandos (<code>BKSCT</code>, <code>BKINF</code>) —
+    <a href="../" style="color:inherit;">../</a> basiert auf
+    <a href="https://github.com/andreknieriem/opentier" target="_blank" rel="noopener" style="color:inherit;">OpenTIER</a>
+    und nutzt nur bestätigte, bereits genutzte Kommandos
+    (<code>BKSCT</code>, <code>BKINF</code>) —
     auf die verlässt du dich fürs echte Ver-/Entriegeln.
   </div>
 
