@@ -4,111 +4,377 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ScooterLock</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#05070b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%B4%3C/text%3E%3C/svg%3E">
 <style>
   :root {
-    color-scheme: dark;
-    --bg: #0f1113;
-    --surface: #1c1e21;
-    --accent: #00d9a3;
-    --danger: #ff4b4b;
-    --text: #ffffff;
-    --muted: #9aa0a6;
+    --bg-0: #05070b;
+    --bg-1: #0b0f16;
+    --surface: rgba(255,255,255,0.05);
+    --surface-strong: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.09);
+    --text: #f3f6fa;
+    --muted: #8992a3;
+    --accent-a: #00e5c9;
+    --accent-b: #7c5cff;
+    --danger-a: #ff5f7e;
+    --danger-b: #ff3d5f;
+    --amber: #ffb454;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
   body {
-    margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    background: var(--bg-0);
     color: var(--text);
     min-height: 100vh;
     display: flex;
     justify-content: center;
+    overflow-x: hidden;
+    position: relative;
   }
+
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb-a {
+    width: 46vh; height: 46vh;
+    background: radial-gradient(circle, var(--accent-a), transparent 70%);
+    top: -12vh; left: -14vh;
+    animation: drift-a 16s ease-in-out infinite;
+  }
+  .orb-b {
+    width: 42vh; height: 42vh;
+    background: radial-gradient(circle, var(--accent-b), transparent 70%);
+    bottom: -14vh; right: -12vh;
+    animation: drift-b 18s ease-in-out infinite;
+  }
+  @keyframes drift-a {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(4vh, 3vh) scale(1.08); }
+  }
+  @keyframes drift-b {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-3vh, -4vh) scale(1.1); }
+  }
+
   main {
+    position: relative;
+    z-index: 1;
     width: 100%;
-    max-width: 420px;
-    padding: 24px;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    max-width: 440px;
+    padding: max(1.75rem, env(safe-area-inset-top)) 1.5rem calc(2rem + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    gap: 1.1rem;
   }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .brand { display: flex; align-items: center; gap: 0.7rem; }
+  .brand-icon {
+    width: 42px; height: 42px;
+    border-radius: 13px;
+    background: linear-gradient(155deg, var(--accent-a), var(--accent-b));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--accent-b) 60%, transparent);
+    flex-shrink: 0;
+  }
+  .brand-icon svg { width: 22px; height: 22px; color: #05070b; }
+  .brand h1 { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; }
+  .brand .sub { margin: 1px 0 0; font-size: 0.75rem; color: var(--muted); }
+
+  .conn-pill {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.72rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .conn-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .conn-pill.connecting .conn-dot { background: var(--amber); animation: pulse-dot 1s ease-in-out infinite; }
+  .conn-pill.connected .conn-dot { background: var(--accent-a); box-shadow: 0 0 8px var(--accent-a); }
+  .conn-pill.connected { color: var(--text); }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
   .card {
     background: var(--surface);
-    border-radius: 24px;
-    padding: 24px;
-    text-align: center;
-    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: 26px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
-  .battery { font-size: 44px; font-weight: 800; margin: 0; }
-  .label { color: var(--muted); font-size: 14px; margin: 4px 0 0; }
-  .lockstate { color: var(--accent); font-weight: 700; font-size: 13px; margin-top: 10px; }
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+
+  .gauge-card {
+    padding: 1.75rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.1rem;
+  }
+  .gauge { position: relative; width: 190px; height: 190px; }
+  .gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .gauge-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 12; }
+  .gauge-fill {
+    fill: none;
+    stroke-width: 12;
+    stroke-linecap: round;
+    stroke: url(#gaugeGradient);
+    transition: stroke-dashoffset 0.7s cubic-bezier(.4,0,.2,1), stroke 0.3s ease;
+  }
+  .gauge-fill.low { stroke: var(--danger-b); }
+  .gauge-fill.mid { stroke: var(--amber); }
+  .gauge-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .battery-value { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .gauge-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-top: 2px; }
+
+  .lock-badge {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.82rem; font-weight: 700;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+  .lock-badge svg { width: 15px; height: 15px; }
+  .lock-badge.is-locked {
+    color: var(--danger-a);
+    border-color: color-mix(in srgb, var(--danger-a) 35%, transparent);
+    background: color-mix(in srgb, var(--danger-a) 12%, transparent);
+  }
+  .lock-badge.is-unlocked {
+    color: var(--accent-a);
+    border-color: color-mix(in srgb, var(--accent-a) 35%, transparent);
+    background: color-mix(in srgb, var(--accent-a) 12%, transparent);
+  }
+  .lock-badge .icon-open { display: none; }
+  .lock-badge.is-unlocked .icon-closed { display: none; }
+  .lock-badge.is-unlocked .icon-open { display: block; }
+
+  .field { display: flex; flex-direction: column; gap: 0.45rem; }
+  .field label { font-size: 0.75rem; color: var(--muted); font-weight: 600; padding-left: 0.2rem; }
+  .input-wrap { position: relative; }
   input[type=password], input[type=text] {
     width: 100%;
-    padding: 14px;
-    border-radius: 12px;
-    border: 1px solid #333;
-    background: #15171a;
+    padding: 0.95rem 2.8rem 0.95rem 1rem;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
     color: var(--text);
-    font-size: 16px;
-    margin-bottom: 16px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
-  button {
+  input:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent-a) 55%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-a) 15%, transparent);
+  }
+  .eye-btn {
+    position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%);
+    width: 38px; height: 38px;
+    border: none; background: transparent; color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; cursor: pointer;
+  }
+  .eye-btn:active { background: rgba(255,255,255,0.06); }
+  .eye-btn svg { width: 19px; height: 19px; }
+  .eye-btn .icon-hide { display: none; }
+  .eye-btn.visible .icon-show { display: none; }
+  .eye-btn.visible .icon-hide { display: block; }
+
+  button { font-family: inherit; cursor: pointer; }
+
+  .btn {
     width: 100%;
-    padding: 18px;
     border: none;
     border-radius: 18px;
-    font-size: 17px;
+    padding: 1rem;
+    font-size: 1rem;
     font-weight: 700;
-    cursor: pointer;
-    color: #000;
+    display: flex; align-items: center; justify-content: center; gap: 0.55rem;
+    transition: transform 0.12s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   }
-  #connectBtn { background: #2c2f33; color: var(--text); margin-bottom: 12px; }
-  #actionBtn { background: var(--accent); }
-  #actionBtn.locked-off { background: var(--danger); }
-  #forgetBtn { background: transparent; color: var(--danger); font-weight: 600; padding: 10px; margin-top: 8px; }
-  .status-line { color: var(--muted); font-size: 12px; text-align: center; margin-top: 8px; min-height: 16px; }
-  .spacer { flex: 1; }
-  .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 16px; }
+  .btn:active { transform: scale(0.98); }
+  .btn svg { width: 19px; height: 19px; }
+
+  .btn-ghost {
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-action {
+    color: #05070b;
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    box-shadow: 0 12px 28px -10px color-mix(in srgb, var(--accent-b) 55%, transparent);
+    font-size: 1.05rem;
+    padding: 1.15rem;
+  }
+  .btn-action.state-unlocked {
+    background: linear-gradient(135deg, var(--danger-a), var(--danger-b));
+    box-shadow: 0 12px 28px -10px color-mix(in srgb, var(--danger-b) 55%, transparent);
+    color: #1a0409;
+  }
+  .btn-action:disabled {
+    opacity: 0.35;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .status-line {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+    min-height: 1.1em;
+    margin: 0;
+  }
+
+  .link-danger {
+    background: none; border: none;
+    color: var(--danger-a);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.5rem;
+    margin: 0 auto;
+    opacity: 0.85;
+  }
+  .link-danger:active { opacity: 1; }
+
+  .warn-card {
+    padding: 1.4rem;
+    text-align: center;
+    display: flex; flex-direction: column; gap: 0.6rem;
+  }
+  .warn-card p { margin: 0; font-size: 0.88rem; line-height: 1.5; }
+  .warn-card .muted { color: var(--muted); font-size: 0.8rem; }
+  .warn-card strong { color: var(--accent-a); }
+
+  .footnote {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0.4rem 0 0;
+    opacity: 0.75;
+  }
+
+  .reveal { animation: reveal 0.5s cubic-bezier(.2,.8,.2,1) both; }
+  .reveal-2 { animation-delay: 0.06s; }
+  .reveal-3 { animation-delay: 0.12s; }
+  .reveal-4 { animation-delay: 0.18s; }
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   .hidden { display: none !important; }
 </style>
 </head>
 <body>
-<main>
-  <h1>ScooterLock</h1>
-  <div class="sub">myTIER GO via Web Bluetooth</div>
+<div class="orb orb-a"></div>
+<div class="orb orb-b"></div>
 
-  <div id="notSupported" class="card hidden">
-    <p>Dieser Browser unterstützt Web Bluetooth nicht.</p>
-    <p class="hint">Auf dem iPhone funktioniert das nur mit <strong>Bluefy</strong> oder <strong>WebBLE</strong>
-    aus dem App Store (Safari selbst unterstützt Web Bluetooth nicht). Auf Android/Desktop: Chrome oder Edge.</p>
+<main>
+  <header class="reveal">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v9M12 4.5 17 9l-8 5.5 8 4M12 11 7 6"/>
+        </svg>
+      </div>
+      <div>
+        <h1>ScooterLock</h1>
+        <p class="sub">myTIER GO · Web Bluetooth</p>
+      </div>
+    </div>
+    <div class="conn-pill" id="connPill">
+      <span class="conn-dot" id="connDot"></span>
+      <span id="connLabel">Getrennt</span>
+    </div>
+  </header>
+
+  <div id="notSupported" class="card warn-card hidden reveal reveal-2">
+    <p>Dieser Browser unterstützt <strong>Web Bluetooth</strong> nicht.</p>
+    <p class="muted">Auf dem iPhone geht das nur mit <strong>Bluefy</strong> oder <strong>WebBLE</strong> aus
+    dem App Store — Safari selbst kann kein Web Bluetooth. Auf Android/Desktop: Chrome oder Edge.</p>
   </div>
 
   <div id="app">
-    <div class="card">
-      <p class="battery" id="battery">--%</p>
-      <p class="label">Akku</p>
-      <p class="lockstate" id="lockstate"></p>
+    <section class="card gauge-card reveal reveal-2">
+      <div class="gauge">
+        <svg viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00e5c9"/>
+              <stop offset="100%" stop-color="#7c5cff"/>
+            </linearGradient>
+          </defs>
+          <circle class="gauge-track" cx="100" cy="100" r="86"/>
+          <circle class="gauge-fill" id="batteryRing" cx="100" cy="100" r="86"/>
+        </svg>
+        <div class="gauge-center">
+          <div class="battery-value" id="battery">--%</div>
+          <div class="gauge-label">Akku</div>
+        </div>
+      </div>
+      <div class="lock-badge" id="lockBadge">
+        <svg class="icon-closed" viewBox="0 0 24 24" fill="currentColor"><path d="M6 10V8a6 6 0 1112 0v2h1a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2h1zm2 0h8V8a4 4 0 10-8 0v2z"/></svg>
+        <svg class="icon-open" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8a4 4 0 00-7.86-1.1 1 1 0 11-1.93-.52A6 6 0 0120 8v2h-2V8zM5 10h13a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2z"/></svg>
+        <span id="lockstate">—</span>
+      </div>
+    </section>
+
+    <section class="field reveal reveal-3">
+      <label for="password">Scooter-Passwort</label>
+      <div class="input-wrap">
+        <input type="password" id="password" placeholder="Siehe Verpackung" autocomplete="off">
+        <button type="button" class="eye-btn" id="toggleVisibility" aria-label="Passwort anzeigen">
+          <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0112 19c-7 0-11-7-11-7a21.6 21.6 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 7 11 7a21.6 21.6 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <div class="reveal reveal-4" style="display:flex; flex-direction:column; gap:0.7rem;">
+      <button id="connectBtn" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v9M12 4.5 17 9l-8 5.5 8 4M12 11 7 6"/></svg>
+        Mit Scooter verbinden
+      </button>
+      <button id="actionBtn" class="btn btn-action" disabled>ENTRIEGELN</button>
+      <p class="status-line" id="statusLine"></p>
+      <button id="forgetBtn" class="link-danger">Verbindung vergessen</button>
     </div>
-
-    <label for="password">Scooter-Passwort (siehe Verpackung)</label>
-    <input type="password" id="password" placeholder="Passwort" autocomplete="off">
-
-    <button id="connectBtn">Mit Scooter verbinden</button>
-    <button id="actionBtn" disabled>ENTRIEGELN</button>
-    <div class="status-line" id="statusLine"></div>
-
-    <div class="spacer"></div>
-    <button id="forgetBtn">Verbindung vergessen</button>
-
-    <p class="hint">
-      Diese Seite muss über HTTPS (oder localhost) geladen werden, sonst blockiert
-      der Browser Web Bluetooth. GitHub Pages funktioniert dafür out of the box.
-    </p>
   </div>
+
+  <p class="footnote">
+    Diese Seite braucht HTTPS (oder localhost), sonst blockiert der Browser Web Bluetooth.
+  </p>
 </main>
 
 <script>
@@ -128,6 +394,11 @@ const els = {
   statusLine: document.getElementById('statusLine'),
   app: document.getElementById('app'),
   notSupported: document.getElementById('notSupported'),
+  connPill: document.getElementById('connPill'),
+  connLabel: document.getElementById('connLabel'),
+  lockBadge: document.getElementById('lockBadge'),
+  batteryRing: document.getElementById('batteryRing'),
+  toggleVisibility: document.getElementById('toggleVisibility'),
 };
 
 let gattServer = null;
@@ -162,9 +433,34 @@ const Protocol = {
   },
 };
 
+// --- Gauge ring ---
+const RING_CIRCUMFERENCE = 2 * Math.PI * 86;
+els.batteryRing.style.strokeDasharray = String(RING_CIRCUMFERENCE);
+els.batteryRing.style.strokeDashoffset = String(RING_CIRCUMFERENCE);
+
+function setBatteryRing(pct) {
+  const clamped = Math.max(0, Math.min(100, pct));
+  els.batteryRing.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - clamped / 100));
+  els.batteryRing.classList.toggle('low', clamped < 20);
+  els.batteryRing.classList.toggle('mid', clamped >= 20 && clamped < 50);
+}
+
+function setConnState(state) {
+  els.connPill.classList.remove('connecting', 'connected');
+  if (state === 'connecting') { els.connPill.classList.add('connecting'); els.connLabel.textContent = 'Verbinde...'; }
+  else if (state === 'connected') { els.connPill.classList.add('connected'); els.connLabel.textContent = 'Verbunden'; }
+  else { els.connLabel.textContent = 'Getrennt'; }
+}
+
 els.password.value = localStorage.getItem('scooter_password') || '';
 els.password.addEventListener('input', () => {
   localStorage.setItem('scooter_password', els.password.value);
+});
+
+els.toggleVisibility.addEventListener('click', () => {
+  const showing = els.password.type === 'text';
+  els.password.type = showing ? 'password' : 'text';
+  els.toggleVisibility.classList.toggle('visible', !showing);
 });
 
 if (!navigator.bluetooth) {
@@ -178,6 +474,7 @@ els.connectBtn.addEventListener('click', async () => {
     return;
   }
   try {
+    setConnState('connecting');
     els.statusLine.textContent = 'Suche Scooter...';
     const device = await navigator.bluetooth.requestDevice({
       filters: [{ services: [SERVICE_UUID] }],
@@ -194,6 +491,7 @@ els.connectBtn.addEventListener('click', async () => {
     await notifyChar.startNotifications();
     notifyChar.addEventListener('characteristicvaluechanged', onNotify);
 
+    setConnState('connected');
     els.statusLine.textContent = 'Verbunden';
     els.connectBtn.textContent = 'Trennen';
     els.actionBtn.disabled = false;
@@ -202,6 +500,7 @@ els.connectBtn.addEventListener('click', async () => {
     pollTimer = setInterval(() => sendCommand(Protocol.statusCommand(els.password.value)), STATUS_POLL_MS);
   } catch (err) {
     console.error(err);
+    setConnState('idle');
     els.statusLine.textContent = 'Fehler: ' + err.message;
   }
 });
@@ -223,6 +522,7 @@ function onDisconnected() {
   gattServer = null; writeChar = null; notifyChar = null;
   els.connectBtn.textContent = 'Mit Scooter verbinden';
   els.actionBtn.disabled = true;
+  setConnState('idle');
   els.statusLine.textContent = 'Getrennt';
 }
 
@@ -232,9 +532,14 @@ function onNotify(event) {
   if (!status) return;
   isLocked = status.isLocked;
   els.lockstate.textContent = isLocked ? 'Verriegelt' : 'Entriegelt';
-  if (status.battery !== null) els.battery.textContent = status.battery + '%';
+  els.lockBadge.classList.toggle('is-locked', isLocked);
+  els.lockBadge.classList.toggle('is-unlocked', !isLocked);
+  if (status.battery !== null) {
+    els.battery.textContent = status.battery + '%';
+    setBatteryRing(status.battery);
+  }
   els.actionBtn.textContent = isLocked ? 'ENTRIEGELN' : 'VERRIEGELN';
-  els.actionBtn.classList.toggle('locked-off', !isLocked);
+  els.actionBtn.classList.toggle('state-unlocked', !isLocked);
 }
 
 async function sendCommand(command) {
