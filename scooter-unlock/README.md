@@ -63,36 +63,41 @@ hat) — das ist inzwischen anhand der obigen Tabelle korrigiert.
 Nur Index 5 und 6 werden aktuell in der UI angezeigt; Geschwindigkeit,
 Trip- und Gesamt-km liegen im Rohtext vor, werden aber nicht ausgewertet.
 
-### Licht (experimentell, Beta)
+Diese App (`index.html`) beschränkt sich bewusst auf `BKSCT`/`BKINF` —
+das ist der Stand, der bereits genutzt wird und zuverlässig funktioniert.
 
-Ein `AT+BKLED=<passwort>,...$`-Kommando wird in einem
+## Test-Labor (experimentell)
+
+Unter [`test/`](test/index.html) liegt eine separate Konsole für alles,
+was (noch) nicht bestätigt ist. Verbindung + abonnierte Kanäle wie hier,
+aber mit frei editierbaren Rohbefehlen, wählbarem Ziel-Kanal und einem
+Live-Log statt einer fertigen UI — zum Anklicken und Ausprobieren am
+eigenen Scooter, nicht zum täglichen Ver-/Entriegeln.
+
+**Licht:** Ein `AT+BKLED=<passwort>,...$`-Kommando wird in einem
 [myTIER-Forum-Post](https://mytier-forum.de/community/reply/3768/) aus dem
-dekompilierten App-Code erwähnt. Zusätzliche Bestätigung: Ein anderer
-Nutzer im selben Thread hat dort das dekompilierte `VehicleStatus`-Objekt
-der offiziellen App gepostet, das ein Feld `isHeadLampTurnedOn` (boolean)
-enthält — Lichtsteuerung ist also real, nur der genaue Bluetooth-Befehl
-dafür bleibt unbestätigt. Weder OpenTIER noch der Stand, auf dem dieses
-Projekt sonst basiert, hatten `BKLED` implementiert.
+dekompilierten App-Code erwähnt. Zusätzliche Bestätigung im selben Thread:
+das dekompilierte `VehicleStatus`-Objekt der offiziellen App hat ein Feld
+`isHeadLampTurnedOn` (boolean) — Lichtsteuerung ist also real, nur der
+genaue Bluetooth-Befehl dafür bleibt unbestätigt. Weder OpenTIER noch der
+Stand, auf dem dieses Projekt sonst basiert, hatten `BKLED` implementiert.
+Das Labor hat "Licht an/aus"-Presets, die `AT+BKLED=<passwort>,1$` bzw.
+`,0$` nach dem `BKSCT`-Muster senden — **ob `1`/`0` wirklich an/aus
+bedeuten oder der Befehl überhaupt etwas tut, ist offen.**
 
-Diese App sendet testweise `AT+BKLED=<passwort>,1$` (an) /
-`AT+BKLED=<passwort>,0$` (aus), nach dem Muster von `BKSCT`. **Ob `1`/`0`
-wirklich an/aus bedeuten (oder ob der Befehl überhaupt etwas tut), ist
-nicht bestätigt** — einmal am eigenen Scooter ausprobieren. Antwortet der
-Scooter mit `+ACK:BKLED,0` / `+ACK:BKLED,1`, übernimmt die App das als
-bestätigten Zustand; ohne Antwort bleibt es bei der optimistischen
-lokalen Anzeige.
-
-**Offene Spur:** Ein Nutzer hat den Scooter per ESP32 (Standard-AT-BLE-
-Firmware) gescannt und unter dem Service `0x2C00` fünf Characteristics
-gefunden: `0x2C01` (Write, wird von dieser App genutzt), `0x2C10`
-(Notify, wird genutzt) — sowie **`0x2C02`, `0x2C03`, `0x2C04`**, die
-bisher niemand angesprochen hat. Denkbar, dass Licht/weitere Funktionen
-über einen dieser drei Kanäle laufen statt über `0x2C01`. Wer Lust hat,
-das mit nRF Connect zu erkunden: einfach schreiben/lesen und schauen, ob
-eine der drei etwas zurückgibt.
+**Unbekannte Kanäle:** Ein Nutzer hat den Scooter per ESP32 (Standard-AT-
+BLE-Firmware) gescannt und unter dem Service `0x2C00` fünf Characteristics
+gefunden: `0x2C01` (Write, von dieser App genutzt), `0x2C10` (Notify,
+genutzt) — sowie **`0x2C02`, `0x2C03`, `0x2C04`**, die bisher niemand
+angesprochen hat, aber laut Scan dieselbe Write+Notify-Fähigkeit haben.
+Das Labor entdeckt beim Verbinden automatisch alle Characteristics des
+Service und lässt jede davon als Sendeziel wählen — falls Licht (oder
+etwas anderes) über einen dieser drei Kanäle statt über `0x2C01` läuft,
+lässt sich das dort ausprobieren.
 
 Weitere AT+BK-Befehle (z. B. für Klingel, Geschwindigkeitsbegrenzung oder
-Passwortänderung) konnten bei der Recherche nicht gefunden werden.
+Passwortänderung) konnten bei der Recherche nicht gefunden werden — im
+Labor lässt sich mit freiem Text trotzdem danach suchen.
 
 ## iPhone
 

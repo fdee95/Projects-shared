@@ -247,29 +247,6 @@
     cursor: not-allowed;
   }
 
-  .btn-light.is-on {
-    color: var(--amber);
-    border-color: color-mix(in srgb, var(--amber) 45%, transparent);
-    background: color-mix(in srgb, var(--amber) 14%, var(--surface-strong));
-  }
-  .beta-tag {
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 0.12rem 0.4rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--amber) 22%, transparent);
-    color: var(--amber);
-    font-weight: 800;
-  }
-  .hint {
-    text-align: center;
-    font-size: 0.72rem;
-    color: var(--muted);
-    line-height: 1.4;
-    margin: -0.3rem 0 0;
-  }
-
   .status-line {
     text-align: center;
     font-size: 0.78rem;
@@ -390,19 +367,14 @@
         Mit Scooter verbinden
       </button>
       <button id="actionBtn" class="btn btn-action" disabled>ENTRIEGELN</button>
-      <button id="lightBtn" class="btn btn-ghost btn-light" disabled aria-pressed="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.6 10.8c.6.45 1.1 1.2 1.1 2.2h5c0-1 .5-1.75 1.1-2.2A6 6 0 0012 3z"/></svg>
-        <span id="lightBtnLabel">Licht</span>
-        <span class="beta-tag">Beta</span>
-      </button>
-      <p class="hint">Unbestätigter Community-Befehl (AT+BKLED) — bitte einmal am eigenen Scooter testen.</p>
       <p class="status-line" id="statusLine"></p>
       <button id="forgetBtn" class="link-danger">Verbindung vergessen</button>
     </div>
   </div>
 
   <p class="footnote">
-    Diese Seite braucht HTTPS (oder localhost), sonst blockiert der Browser Web Bluetooth.
+    Diese Seite braucht HTTPS (oder localhost), sonst blockiert der Browser Web Bluetooth.<br>
+    Weitere/experimentelle Befehle ausprobieren? → <a href="test/" style="color:inherit;">Test-Labor</a>
   </p>
 </main>
 
@@ -416,8 +388,6 @@ const STATUS_POLL_MS = 10000;
 const els = {
   connectBtn: document.getElementById('connectBtn'),
   actionBtn: document.getElementById('actionBtn'),
-  lightBtn: document.getElementById('lightBtn'),
-  lightBtnLabel: document.getElementById('lightBtnLabel'),
   forgetBtn: document.getElementById('forgetBtn'),
   password: document.getElementById('password'),
   battery: document.getElementById('battery'),
@@ -437,23 +407,14 @@ let writeChar = null;
 let notifyChar = null;
 let pollTimer = null;
 let isLocked = true;
-let isLightOn = false;
 
 // --- Protocol (identisch zur Android-App, siehe scooter-unlock/) ---
-// AT+BKLED ist NICHT von OpenTIER verifiziert - stammt aus einem myTIER-
-// Forum-Post (Community-Reverse-Engineering, siehe README). ,1/,0 als
-// an/aus ist eine Annahme nach dem BKSCT-Muster, ungetestet.
+// Nur bestätigte, bereits genutzte Kommandos (OpenTIER-Stand). Experimentelle
+// Befehle (Licht etc.) leben separat im Test-Labor (test/index.html).
 const Protocol = {
   lockCommand: (pw) => `AT+BKSCT=${pw},1$\r\n`,
   unlockCommand: (pw) => `AT+BKSCT=${pw},0$\r\n`,
   statusCommand: (pw) => `AT+BKINF=${pw},0$\r\n`,
-  lightOnCommand: (pw) => `AT+BKLED=${pw},1$\r\n`,
-  lightOffCommand: (pw) => `AT+BKLED=${pw},0$\r\n`,
-  parseLightAck(text) {
-    if (text.includes('+ACK:BKLED,1')) return true;
-    if (text.includes('+ACK:BKLED,0')) return false;
-    return null;
-  },
   // Feldreihenfolge von "+ACK:BKINF,..." bestätigt durch Live-Mitschnitte
   // im myTIER-Forum (z.B. "+ACK:BKINF,0,21.3,0.00,1634.4,9,57,1$"):
   //   [0] unklar (vermutlich Flag, evtl. Lichtstatus - unbestätigt)
@@ -543,7 +504,6 @@ els.connectBtn.addEventListener('click', async () => {
     els.statusLine.textContent = 'Verbunden';
     els.connectBtn.textContent = 'Trennen';
     els.actionBtn.disabled = false;
-    els.lightBtn.disabled = false;
 
     await sendCommand(Protocol.statusCommand(els.password.value));
     pollTimer = setInterval(() => sendCommand(Protocol.statusCommand(els.password.value)), STATUS_POLL_MS);
@@ -560,51 +520,23 @@ els.actionBtn.addEventListener('click', async () => {
   await sendCommand(isLocked ? Protocol.unlockCommand(pw) : Protocol.lockCommand(pw));
 });
 
-els.lightBtn.addEventListener('click', async () => {
-  const pw = els.password.value;
-  if (!pw) { els.statusLine.textContent = 'Bitte Passwort eintragen'; return; }
-  const next = !isLightOn;
-  await sendCommand(next ? Protocol.lightOnCommand(pw) : Protocol.lightOffCommand(pw));
-  // Optimistisch, da unbestätigt ob der Scooter überhaupt mit
-  // +ACK:BKLED antwortet - onNotify korrigiert bei Bedarf.
-  isLightOn = next;
-  updateLightButton();
-  els.statusLine.textContent = (next ? 'Licht an' : 'Licht aus') + ' gesendet (Beta-Befehl)';
-});
-
 els.forgetBtn.addEventListener('click', () => {
   localStorage.removeItem('scooter_password');
   els.password.value = '';
   if (gattServer && gattServer.connected) gattServer.disconnect();
 });
 
-function updateLightButton() {
-  els.lightBtn.classList.toggle('is-on', isLightOn);
-  els.lightBtn.setAttribute('aria-pressed', String(isLightOn));
-  els.lightBtnLabel.textContent = isLightOn ? 'Licht aus' : 'Licht an';
-}
-
 function onDisconnected() {
   clearInterval(pollTimer);
   gattServer = null; writeChar = null; notifyChar = null;
   els.connectBtn.textContent = 'Mit Scooter verbinden';
   els.actionBtn.disabled = true;
-  els.lightBtn.disabled = true;
   setConnState('idle');
   els.statusLine.textContent = 'Getrennt';
 }
 
 function onNotify(event) {
   const text = new TextDecoder().decode(event.target.value);
-
-  const lightAck = Protocol.parseLightAck(text);
-  if (lightAck !== null) {
-    isLightOn = lightAck;
-    updateLightButton();
-    els.statusLine.textContent = 'Scooter bestätigt: ' + (lightAck ? 'Licht an' : 'Licht aus');
-    return;
-  }
-
   const status = Protocol.parseResponse(text);
   if (!status) return;
   isLocked = status.isLocked;

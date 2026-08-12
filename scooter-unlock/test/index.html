@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ScooterLock Labor</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#05070b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AA%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg-0: #05070b;
+    --bg-1: #0b0f16;
+    --surface: rgba(255,255,255,0.05);
+    --surface-strong: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.09);
+    --text: #f3f6fa;
+    --muted: #8992a3;
+    --accent-a: #00e5c9;
+    --accent-b: #7c5cff;
+    --danger-a: #ff5f7e;
+    --danger-b: #ff3d5f;
+    --amber: #ffb454;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-0);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  main {
+    width: 100%;
+    max-width: 480px;
+    padding: max(1.75rem, env(safe-area-inset-top)) 1.25rem calc(2.5rem + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .brand { display: flex; align-items: center; gap: 0.7rem; }
+  .brand-icon {
+    width: 42px; height: 42px;
+    border-radius: 13px;
+    background: linear-gradient(155deg, var(--amber), var(--danger-a));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .brand h1 { margin: 0; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; }
+  .brand .sub { margin: 1px 0 0; font-size: 0.75rem; color: var(--muted); }
+  .back-link {
+    font-size: 0.76rem;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .warn-banner {
+    padding: 0.8rem 0.95rem;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--amber) 10%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--amber) 30%, var(--border));
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .warn-banner strong { color: var(--text); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .card h2 {
+    margin: 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 800;
+  }
+
+  .row { display: flex; gap: 0.5rem; }
+  .row.wrap { flex-wrap: wrap; }
+
+  label { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+  input, select, textarea {
+    width: 100%;
+    padding: 0.75rem 0.9rem;
+    border-radius: 13px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    font-size: 0.92rem;
+    font-family: inherit;
+  }
+  textarea {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.82rem;
+    resize: vertical;
+    min-height: 3.4em;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent-a) 55%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-a) 15%, transparent);
+  }
+  select { appearance: none; }
+
+  button { font-family: inherit; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--accent-a); outline-offset: 2px; }
+
+  .btn {
+    border: none;
+    border-radius: 13px;
+    padding: 0.8rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+    color: #05070b;
+    border: none;
+  }
+  .btn-danger { color: var(--danger-a); background: transparent; border: 1px solid color-mix(in srgb, var(--danger-a) 35%, transparent); }
+  .btn-block { width: 100%; }
+
+  .preset {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .preset.is-beta { border-color: color-mix(in srgb, var(--amber) 45%, transparent); color: var(--amber); }
+
+  .conn-pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.7rem;
+    color: var(--muted);
+    align-self: flex-start;
+  }
+  .conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+  .conn-pill.connected .conn-dot { background: var(--accent-a); box-shadow: 0 0 6px var(--accent-a); }
+  .conn-pill.connected { color: var(--text); }
+
+  .char-list { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.78rem; }
+  .char-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0.7rem;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+  }
+  .char-uuid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); }
+  .char-uuid .unknown { color: var(--amber); }
+  .char-props { color: var(--muted); font-size: 0.7rem; }
+  .empty-hint { color: var(--muted); font-size: 0.78rem; }
+
+  .log {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 0.75rem 0.85rem;
+    height: 220px;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .log .out { color: var(--accent-a); }
+  .log .in { color: var(--amber); }
+  .log .sys { color: var(--muted); }
+  .log .ts { color: var(--muted); opacity: 0.7; }
+
+  .footnote {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.5;
+    opacity: 0.8;
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🧪</div>
+      <div>
+        <h1>ScooterLock Labor</h1>
+        <p class="sub">Experimentelle Konsole</p>
+      </div>
+    </div>
+    <a class="back-link" href="../">← Zur App</a>
+  </header>
+
+  <div class="warn-banner">
+    <strong>Nur zum Testen, kein Ersatz für die App.</strong> Hier sendest du
+    rohe AT-Kommandos direkt an den Scooter — inklusive Befehlen, deren
+    Wirkung unbekannt ist (z. B. <code>AT+BKLED</code> oder die Kanäle
+    <code>0x2C02–0x2C04</code>). Die normale App unter
+    <a href="../" style="color:inherit;">../</a> nutzt nur bestätigte,
+    bereits genutzte Kommandos (<code>BKSCT</code>, <code>BKINF</code>) —
+    auf die verlässt du dich fürs echte Ver-/Entriegeln.
+  </div>
+
+  <div id="notSupported" class="warn-banner hidden">
+    Dieser Browser unterstützt kein Web Bluetooth. Auf dem iPhone: Bluefy
+    oder WebBLE aus dem App Store. Auf Android/Desktop: Chrome oder Edge.
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <h2>Verbindung</h2>
+        <div class="conn-pill" id="connPill"><span class="conn-dot"></span><span id="connLabel">Getrennt</span></div>
+      </div>
+      <label for="password">Scooter-Passwort</label>
+      <input type="text" id="password" placeholder="Siehe Verpackung" autocomplete="off">
+      <button id="connectBtn" class="btn btn-primary btn-block">Verbinden &amp; Kanäle abonnieren</button>
+    </div>
+
+    <div class="card">
+      <h2>Gefundene Characteristics</h2>
+      <div class="char-list" id="charList">
+        <p class="empty-hint">Noch nicht verbunden.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Kommando</h2>
+      <div class="row wrap" id="presetRow">
+        <button type="button" class="preset" data-cmd="AT+BKSCT={PW},0$">Entriegeln</button>
+        <button type="button" class="preset" data-cmd="AT+BKSCT={PW},1$">Verriegeln</button>
+        <button type="button" class="preset" data-cmd="AT+BKINF={PW},0$">Status</button>
+        <button type="button" class="preset is-beta" data-cmd="AT+BKLED={PW},1$">Licht an (Beta)</button>
+        <button type="button" class="preset is-beta" data-cmd="AT+BKLED={PW},0$">Licht aus (Beta)</button>
+      </div>
+      <label for="targetChar">Ziel-Characteristic</label>
+      <select id="targetChar"><option value="">— erst verbinden —</option></select>
+      <label for="rawCmd">Roher AT-Befehl (frei editierbar, {PW} wird ersetzt)</label>
+      <textarea id="rawCmd" spellcheck="false"></textarea>
+      <button id="sendBtn" class="btn btn-primary btn-block" disabled>Senden</button>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <h2>Log</h2>
+        <div class="row">
+          <button id="clearLogBtn" class="btn" style="padding:0.4rem 0.7rem; font-size:0.72rem;">Leeren</button>
+          <button id="copyLogBtn" class="btn" style="padding:0.4rem 0.7rem; font-size:0.72rem;">Kopieren</button>
+        </div>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+
+    <button id="disconnectBtn" class="btn btn-danger btn-block hidden">Trennen</button>
+  </div>
+
+  <p class="footnote">
+    Passwort wird mit der Haupt-App geteilt (gleicher lokaler Speicher).
+    Bekannt &amp; bestätigt: <code>0x2C01</code> (Write), <code>0x2C10</code>
+    (Notify). Unbekannt: <code>0x2C02–0x2C04</code> — gleiche
+    Write/Notify-Fähigkeit laut GATT-Scan, aber unklare Funktion.
+  </p>
+</main>
+
+<script>
+const SERVICE_UUID = '00002c00-0000-1000-8000-00805f9b34fb';
+const KNOWN_UUIDS = {
+  '00002c01-0000-1000-8000-00805f9b34fb': '2C01 (bekannt: Write)',
+  '00002c10-0000-1000-8000-00805f9b34fb': '2C10 (bekannt: Notify)',
+};
+const WRITE_CHUNK_SIZE = 20;
+
+const els = {
+  app: document.getElementById('app'),
+  notSupported: document.getElementById('notSupported'),
+  connPill: document.getElementById('connPill'),
+  connLabel: document.getElementById('connLabel'),
+  password: document.getElementById('password'),
+  connectBtn: document.getElementById('connectBtn'),
+  disconnectBtn: document.getElementById('disconnectBtn'),
+  charList: document.getElementById('charList'),
+  presetRow: document.getElementById('presetRow'),
+  targetChar: document.getElementById('targetChar'),
+  rawCmd: document.getElementById('rawCmd'),
+  sendBtn: document.getElementById('sendBtn'),
+  log: document.getElementById('log'),
+  clearLogBtn: document.getElementById('clearLogBtn'),
+  copyLogBtn: document.getElementById('copyLogBtn'),
+};
+
+let gattServer = null;
+let characteristics = []; // { uuid, char, canWrite, canNotify }
+
+els.password.value = localStorage.getItem('scooter_password') || '';
+els.password.addEventListener('input', () => {
+  localStorage.setItem('scooter_password', els.password.value);
+});
+
+if (!navigator.bluetooth) {
+  els.notSupported.classList.remove('hidden');
+} else {
+  els.app.classList.remove('hidden');
+}
+
+function shortUuid(uuid) {
+  return KNOWN_UUIDS[uuid] || (uuid.slice(4, 8).toUpperCase() + ' (unbekannt)');
+}
+
+function log(kind, text) {
+  const ts = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const line = document.createElement('div');
+  line.innerHTML = `<span class="ts">${ts}</span> <span class="${kind}">${text.replace(/</g, '&lt;')}</span>`;
+  els.log.appendChild(line);
+  els.log.scrollTop = els.log.scrollHeight;
+}
+
+function hexOf(bytes) {
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join(' ');
+}
+
+els.clearLogBtn.addEventListener('click', () => { els.log.innerHTML = ''; });
+els.copyLogBtn.addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(els.log.innerText); log('sys', 'Log kopiert.'); }
+  catch { log('sys', 'Kopieren fehlgeschlagen.'); }
+});
+
+els.presetRow.addEventListener('click', (event) => {
+  const btn = event.target.closest('.preset');
+  if (!btn) return;
+  els.rawCmd.value = btn.dataset.cmd;
+});
+
+els.connectBtn.addEventListener('click', async () => {
+  try {
+    els.connectBtn.disabled = true;
+    els.connLabel.textContent = 'Verbinde…';
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [SERVICE_UUID] }],
+      optionalServices: [SERVICE_UUID],
+    });
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+
+    gattServer = await device.gatt.connect();
+    const service = await gattServer.getPrimaryService(SERVICE_UUID);
+    const chars = await service.getCharacteristics();
+
+    characteristics = [];
+    els.charList.innerHTML = '';
+    els.targetChar.innerHTML = '';
+
+    for (const char of chars) {
+      const props = char.properties;
+      const canWrite = props.write || props.writeWithoutResponse;
+      const canNotify = props.notify || props.indicate;
+      characteristics.push({ uuid: char.uuid, char, canWrite, canNotify });
+
+      const item = document.createElement('div');
+      item.className = 'char-item';
+      const label = KNOWN_UUIDS[char.uuid] || char.uuid.slice(4, 8).toUpperCase();
+      const isKnown = !!KNOWN_UUIDS[char.uuid];
+      item.innerHTML = `<span class="char-uuid">${isKnown ? '' : '<span class="unknown">●</span> '}${label}</span>
+        <span class="char-props">${[canWrite ? 'write' : null, canNotify ? 'notify' : null].filter(Boolean).join(' · ') || '—'}</span>`;
+      els.charList.appendChild(item);
+
+      if (canWrite) {
+        const opt = document.createElement('option');
+        opt.value = char.uuid;
+        opt.textContent = shortUuid(char.uuid);
+        els.targetChar.appendChild(opt);
+      }
+
+      if (canNotify) {
+        try {
+          await char.startNotifications();
+          char.addEventListener('characteristicvaluechanged', (event) => {
+            const bytes = new Uint8Array(event.target.value.buffer);
+            const text = new TextDecoder().decode(bytes);
+            log('in', `← [${shortUuid(char.uuid)}] "${text.trim()}"  (hex: ${hexOf(bytes)})`);
+          });
+          log('sys', `Notify aktiv auf ${shortUuid(char.uuid)}`);
+        } catch (err) {
+          log('sys', `Notify fehlgeschlagen auf ${shortUuid(char.uuid)}: ${err.message}`);
+        }
+      }
+    }
+
+    // Bevorzugt die bekannte Write-Characteristic (2C01) vorauswählen.
+    const known = characteristics.find((c) => KNOWN_UUIDS[c.uuid] && c.canWrite);
+    if (known) els.targetChar.value = known.uuid;
+
+    els.connPill.classList.add('connected');
+    els.connLabel.textContent = 'Verbunden';
+    els.connectBtn.classList.add('hidden');
+    els.disconnectBtn.classList.remove('hidden');
+    els.sendBtn.disabled = false;
+    log('sys', `Verbunden. ${characteristics.length} Characteristic(s) gefunden.`);
+  } catch (err) {
+    console.error(err);
+    log('sys', 'Fehler: ' + err.message);
+    els.connLabel.textContent = 'Getrennt';
+  } finally {
+    els.connectBtn.disabled = false;
+  }
+});
+
+els.disconnectBtn.addEventListener('click', () => {
+  if (gattServer && gattServer.connected) gattServer.disconnect();
+});
+
+function onDisconnected() {
+  gattServer = null;
+  characteristics = [];
+  els.connPill.classList.remove('connected');
+  els.connLabel.textContent = 'Getrennt';
+  els.connectBtn.classList.remove('hidden');
+  els.disconnectBtn.classList.add('hidden');
+  els.sendBtn.disabled = true;
+  els.charList.innerHTML = '<p class="empty-hint">Noch nicht verbunden.</p>';
+  els.targetChar.innerHTML = '<option value="">— erst verbinden —</option>';
+  log('sys', 'Getrennt.');
+}
+
+els.sendBtn.addEventListener('click', async () => {
+  const targetUuid = els.targetChar.value;
+  const entry = characteristics.find((c) => c.uuid === targetUuid);
+  if (!entry) { log('sys', 'Kein Ziel-Kanal gewählt.'); return; }
+
+  const pw = els.password.value;
+  let command = els.rawCmd.value;
+  if (!command.trim()) { log('sys', 'Kein Befehl eingetragen.'); return; }
+  command = command.replace(/\{PW\}/g, pw);
+  // Terminator ergänzen, ohne ein vorhandenes "$" zu verdoppeln.
+  if (!command.endsWith('\r\n')) {
+    if (!command.endsWith('$')) command += '$';
+    command += '\r\n';
+  }
+
+  log('out', `→ [${shortUuid(targetUuid)}] "${command.trim()}"`);
+
+  const bytes = new TextEncoder().encode(command);
+  try {
+    for (let i = 0; i < bytes.length; i += WRITE_CHUNK_SIZE) {
+      const chunk = bytes.slice(i, i + WRITE_CHUNK_SIZE);
+      if (entry.char.properties.writeWithoutResponse) {
+        await entry.char.writeValueWithoutResponse(chunk);
+      } else {
+        await entry.char.writeValueWithResponse(chunk);
+      }
+    }
+  } catch (err) {
+    log('sys', 'Sendefehler: ' + err.message);
+  }
+});
+</script>
+</body>
+</html>
