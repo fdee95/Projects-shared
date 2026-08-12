@@ -44,6 +44,28 @@ Die Statusantwort (`AT+BKINF`) ist eine kommagetrennte `$...$`-Zeile;
 je nach Firmware-Revision steht das Lock-Flag am Anfang oder am Ende der
 Felderliste, daher wertet der Parser beide Layouts aus.
 
+### Licht (experimentell, Beta)
+
+Im [myTIER-Forum](https://mytier-forum.de/community/topic/akkustand-via-bluetooth-auslesen/page/3/)
+wird zusätzlich ein `AT+BKLED=<passwort>,...$`-Kommando aus dem
+dekompilierten App-Code genannt, das die LED/das Licht ansprechen soll
+([konkreter Post](https://mytier-forum.de/community/reply/3768/)). Weder
+OpenTIER noch der offizielle App-Reverse-Engineering-Stand, auf dem dieses
+Projekt basiert, hatten das bisher implementiert — die Quelle ist ein
+einzelner Forumsbeitrag, nicht verifiziert.
+
+Diese App sendet testweise `AT+BKLED=<passwort>,1$` (an) /
+`AT+BKLED=<passwort>,0$` (aus), nach dem Muster von `BKSCT`. **Ob `1`/`0`
+wirklich an/aus bedeuten (oder überhaupt etwas tun), ist nicht bestätigt** —
+einmal am eigenen Scooter ausprobieren. Antwortet der Scooter mit
+`+ACK:BKLED,0` / `+ACK:BKLED,1`, übernimmt die App das als bestätigten
+Zustand; ohne Antwort bleibt es bei der optimistischen lokalen Anzeige.
+
+Weitere AT+BK-Befehle (z. B. für Klingel, Geschwindigkeitsbegrenzung oder
+Passwortänderung) konnten bei der Recherche nicht gefunden werden — falls
+jemand mehr aus dem dekompilierten App-Code oder per nRF Connect
+mitschneidet, gerne im Forum-Thread nachlesen/ergänzen.
+
 ## iPhone
 
 **Safari unterstützt kein Web Bluetooth** (Apple-Entscheidung, gilt wegen
