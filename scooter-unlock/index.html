@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ScooterLock</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0f1113;
+    --surface: #1c1e21;
+    --accent: #00d9a3;
+    --danger: #ff4b4b;
+    --text: #ffffff;
+    --muted: #9aa0a6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+  main {
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .card {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .battery { font-size: 44px; font-weight: 800; margin: 0; }
+  .label { color: var(--muted); font-size: 14px; margin: 4px 0 0; }
+  .lockstate { color: var(--accent); font-weight: 700; font-size: 13px; margin-top: 10px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  input[type=password], input[type=text] {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    background: #15171a;
+    color: var(--text);
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  button {
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: 18px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #000;
+  }
+  #connectBtn { background: #2c2f33; color: var(--text); margin-bottom: 12px; }
+  #actionBtn { background: var(--accent); }
+  #actionBtn.locked-off { background: var(--danger); }
+  #forgetBtn { background: transparent; color: var(--danger); font-weight: 600; padding: 10px; margin-top: 8px; }
+  .status-line { color: var(--muted); font-size: 12px; text-align: center; margin-top: 8px; min-height: 16px; }
+  .spacer { flex: 1; }
+  .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 16px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>ScooterLock</h1>
+  <div class="sub">myTIER GO via Web Bluetooth</div>
+
+  <div id="notSupported" class="card hidden">
+    <p>Dieser Browser unterstützt Web Bluetooth nicht.</p>
+    <p class="hint">Auf dem iPhone funktioniert das nur mit <strong>Bluefy</strong> oder <strong>WebBLE</strong>
+    aus dem App Store (Safari selbst unterstützt Web Bluetooth nicht). Auf Android/Desktop: Chrome oder Edge.</p>
+  </div>
+
+  <div id="app">
+    <div class="card">
+      <p class="battery" id="battery">--%</p>
+      <p class="label">Akku</p>
+      <p class="lockstate" id="lockstate"></p>
+    </div>
+
+    <label for="password">Scooter-Passwort (siehe Verpackung)</label>
+    <input type="password" id="password" placeholder="Passwort" autocomplete="off">
+
+    <button id="connectBtn">Mit Scooter verbinden</button>
+    <button id="actionBtn" disabled>ENTRIEGELN</button>
+    <div class="status-line" id="statusLine"></div>
+
+    <div class="spacer"></div>
+    <button id="forgetBtn">Verbindung vergessen</button>
+
+    <p class="hint">
+      Diese Seite muss über HTTPS (oder localhost) geladen werden, sonst blockiert
+      der Browser Web Bluetooth. GitHub Pages funktioniert dafür out of the box.
+    </p>
+  </div>
+</main>
+
+<script>
+const SERVICE_UUID = '00002c00-0000-1000-8000-00805f9b34fb';
+const CHAR_WRITE_UUID = '00002c01-0000-1000-8000-00805f9b34fb';
+const CHAR_NOTIFY_UUID = '00002c10-0000-1000-8000-00805f9b34fb';
+const WRITE_CHUNK_SIZE = 20;
+const STATUS_POLL_MS = 10000;
+
+const els = {
+  connectBtn: document.getElementById('connectBtn'),
+  actionBtn: document.getElementById('actionBtn'),
+  forgetBtn: document.getElementById('forgetBtn'),
+  password: document.getElementById('password'),
+  battery: document.getElementById('battery'),
+  lockstate: document.getElementById('lockstate'),
+  statusLine: document.getElementById('statusLine'),
+  app: document.getElementById('app'),
+  notSupported: document.getElementById('notSupported'),
+};
+
+let gattServer = null;
+let writeChar = null;
+let notifyChar = null;
+let pollTimer = null;
+let isLocked = true;
+
+// --- Protocol (identisch zur Android-App, siehe scooter-unlock/) ---
+const Protocol = {
+  lockCommand: (pw) => `AT+BKSCT=${pw},1$\r\n`,
+  unlockCommand: (pw) => `AT+BKSCT=${pw},0$\r\n`,
+  statusCommand: (pw) => `AT+BKINF=${pw},0$\r\n`,
+  parseResponse(text) {
+    if (text.includes('+ACK:BKSCT,0')) return { isLocked: false, battery: null };
+    if (text.includes('+ACK:BKSCT,1')) return { isLocked: true, battery: null };
+    if (!text.includes(',') || !text.includes('$')) return null;
+
+    const clean = text.substring(text.indexOf(':') + 1).replace(/\$/g, '').replace(/\r\n/g, '');
+    const fields = clean.split(',');
+    if (fields.length < 4) return null;
+
+    let lockField, batteryField;
+    if (fields.length >= 5) {
+      lockField = fields[4]; batteryField = fields[3];
+    } else {
+      lockField = fields[0]; batteryField = fields[3];
+    }
+    const battery = parseInt(batteryField.trim(), 10);
+    const locked = lockField.trim() === '1' || lockField.trim() === 'L';
+    return { isLocked: locked, battery: isNaN(battery) ? null : battery };
+  },
+};
+
+els.password.value = localStorage.getItem('scooter_password') || '';
+els.password.addEventListener('input', () => {
+  localStorage.setItem('scooter_password', els.password.value);
+});
+
+if (!navigator.bluetooth) {
+  els.app.classList.add('hidden');
+  els.notSupported.classList.remove('hidden');
+}
+
+els.connectBtn.addEventListener('click', async () => {
+  if (gattServer && gattServer.connected) {
+    gattServer.disconnect();
+    return;
+  }
+  try {
+    els.statusLine.textContent = 'Suche Scooter...';
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [SERVICE_UUID] }],
+      optionalServices: [SERVICE_UUID],
+    });
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+
+    els.statusLine.textContent = 'Verbinde...';
+    gattServer = await device.gatt.connect();
+    const service = await gattServer.getPrimaryService(SERVICE_UUID);
+    writeChar = await service.getCharacteristic(CHAR_WRITE_UUID);
+    notifyChar = await service.getCharacteristic(CHAR_NOTIFY_UUID);
+
+    await notifyChar.startNotifications();
+    notifyChar.addEventListener('characteristicvaluechanged', onNotify);
+
+    els.statusLine.textContent = 'Verbunden';
+    els.connectBtn.textContent = 'Trennen';
+    els.actionBtn.disabled = false;
+
+    await sendCommand(Protocol.statusCommand(els.password.value));
+    pollTimer = setInterval(() => sendCommand(Protocol.statusCommand(els.password.value)), STATUS_POLL_MS);
+  } catch (err) {
+    console.error(err);
+    els.statusLine.textContent = 'Fehler: ' + err.message;
+  }
+});
+
+els.actionBtn.addEventListener('click', async () => {
+  const pw = els.password.value;
+  if (!pw) { els.statusLine.textContent = 'Bitte Passwort eintragen'; return; }
+  await sendCommand(isLocked ? Protocol.unlockCommand(pw) : Protocol.lockCommand(pw));
+});
+
+els.forgetBtn.addEventListener('click', () => {
+  localStorage.removeItem('scooter_password');
+  els.password.value = '';
+  if (gattServer && gattServer.connected) gattServer.disconnect();
+});
+
+function onDisconnected() {
+  clearInterval(pollTimer);
+  gattServer = null; writeChar = null; notifyChar = null;
+  els.connectBtn.textContent = 'Mit Scooter verbinden';
+  els.actionBtn.disabled = true;
+  els.statusLine.textContent = 'Getrennt';
+}
+
+function onNotify(event) {
+  const text = new TextDecoder().decode(event.target.value);
+  const status = Protocol.parseResponse(text);
+  if (!status) return;
+  isLocked = status.isLocked;
+  els.lockstate.textContent = isLocked ? 'Verriegelt' : 'Entriegelt';
+  if (status.battery !== null) els.battery.textContent = status.battery + '%';
+  els.actionBtn.textContent = isLocked ? 'ENTRIEGELN' : 'VERRIEGELN';
+  els.actionBtn.classList.toggle('locked-off', !isLocked);
+}
+
+async function sendCommand(command) {
+  if (!writeChar) return;
+  const bytes = new TextEncoder().encode(command);
+  for (let i = 0; i < bytes.length; i += WRITE_CHUNK_SIZE) {
+    const chunk = bytes.slice(i, i + WRITE_CHUNK_SIZE);
+    await writeChar.writeValueWithoutResponse(chunk);
+  }
+}
+</script>
+</body>
+</html>
