@@ -97,14 +97,19 @@
 
   .conn-pill {
     display: flex; align-items: center; gap: 0.4rem;
-    padding: 0.4rem 0.7rem;
+    padding: 0.45rem 0.8rem;
     border-radius: 999px;
     background: var(--surface);
     border: 1px solid var(--border);
     font-size: 0.72rem;
+    font-weight: 600;
     color: var(--muted);
     white-space: nowrap;
+    flex-shrink: 0;
   }
+  .conn-pill:active { transform: scale(0.96); }
+  .conn-pill:disabled { opacity: 0.55; cursor: not-allowed; }
+  .conn-pill:focus-visible { outline: 2px solid var(--accent-a); outline-offset: 2px; }
   .conn-dot {
     width: 7px; height: 7px; border-radius: 50%;
     background: var(--muted);
@@ -315,10 +320,10 @@
         <p class="sub">myTIER GO · Web Bluetooth</p>
       </div>
     </div>
-    <div class="conn-pill" id="connPill">
+    <button type="button" class="conn-pill" id="connPill">
       <span class="conn-dot" id="connDot"></span>
-      <span id="connLabel">Getrennt</span>
-    </div>
+      <span id="connLabel">Verbinden</span>
+    </button>
   </header>
 
   <div id="notSupported" class="card warn-card hidden reveal reveal-2">
@@ -352,9 +357,9 @@
       </div>
     </section>
 
-    <button id="actionBtn" class="btn btn-action reveal reveal-2" disabled>ENTRIEGELN</button>
+    <button id="actionBtn" class="btn btn-action" disabled>ENTRIEGELN</button>
 
-    <section class="field reveal reveal-3">
+    <section id="passwordSection" class="field reveal reveal-3 hidden">
       <label for="password">Scooter-Passwort</label>
       <div class="input-wrap">
         <input type="password" id="password" placeholder="Siehe Verpackung" autocomplete="off">
@@ -363,13 +368,13 @@
           <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0112 19c-7 0-11-7-11-7a21.6 21.6 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 7 11 7a21.6 21.6 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>
         </button>
       </div>
+      <button id="submitConnectBtn" type="button" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v9M12 4.5 17 9l-8 5.5 8 4M12 11 7 6"/></svg>
+        Verbinden
+      </button>
     </section>
 
     <div class="reveal reveal-4" style="display:flex; flex-direction:column; gap:0.7rem;">
-      <button id="connectBtn" class="btn btn-ghost">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v9M12 4.5 17 9l-8 5.5 8 4M12 11 7 6"/></svg>
-        Mit Scooter verbinden
-      </button>
       <p class="status-line" id="statusLine"></p>
       <button id="forgetBtn" class="link-danger">Verbindung vergessen</button>
     </div>
@@ -390,7 +395,8 @@ const WRITE_CHUNK_SIZE = 20;
 const STATUS_POLL_MS = 10000;
 
 const els = {
-  connectBtn: document.getElementById('connectBtn'),
+  submitConnectBtn: document.getElementById('submitConnectBtn'),
+  passwordSection: document.getElementById('passwordSection'),
   actionBtn: document.getElementById('actionBtn'),
   forgetBtn: document.getElementById('forgetBtn'),
   password: document.getElementById('password'),
@@ -469,7 +475,7 @@ function setConnState(state) {
   els.connPill.classList.remove('connecting', 'connected');
   if (state === 'connecting') { els.connPill.classList.add('connecting'); els.connLabel.textContent = 'Verbinde...'; }
   else if (state === 'connected') { els.connPill.classList.add('connected'); els.connLabel.textContent = 'Verbunden'; }
-  else { els.connLabel.textContent = 'Getrennt'; }
+  else { els.connLabel.textContent = 'Verbinden'; }
 }
 
 els.password.value = localStorage.getItem('scooter_password') || '';
@@ -488,11 +494,12 @@ if (!navigator.bluetooth) {
   els.notSupported.classList.remove('hidden');
 }
 
-els.connectBtn.addEventListener('click', async () => {
-  if (gattServer && gattServer.connected) {
-    gattServer.disconnect();
-    return;
-  }
+let connecting = false;
+
+async function doConnect() {
+  if (connecting || (gattServer && gattServer.connected)) return;
+  connecting = true;
+  els.connPill.disabled = true;
   try {
     setConnState('connecting');
     els.statusLine.textContent = 'Suche Scooter...';
@@ -513,8 +520,8 @@ els.connectBtn.addEventListener('click', async () => {
 
     setConnState('connected');
     els.statusLine.textContent = 'Verbunden';
-    els.connectBtn.textContent = 'Trennen';
     els.actionBtn.disabled = false;
+    els.passwordSection.classList.add('hidden');
 
     await sendCommand(Protocol.statusCommand(els.password.value));
     pollTimer = setInterval(() => sendCommand(Protocol.statusCommand(els.password.value)), STATUS_POLL_MS);
@@ -522,7 +529,29 @@ els.connectBtn.addEventListener('click', async () => {
     console.error(err);
     setConnState('idle');
     els.statusLine.textContent = 'Fehler: ' + err.message;
+  } finally {
+    connecting = false;
+    els.connPill.disabled = false;
   }
+}
+
+els.connPill.addEventListener('click', () => {
+  if (gattServer && gattServer.connected) {
+    gattServer.disconnect();
+    return;
+  }
+  if (!els.password.value) {
+    els.passwordSection.classList.remove('hidden');
+    els.password.focus();
+    els.statusLine.textContent = 'Passwort eintragen und "Verbinden" tippen';
+    return;
+  }
+  doConnect();
+});
+
+els.submitConnectBtn.addEventListener('click', () => {
+  if (!els.password.value) { els.statusLine.textContent = 'Bitte Passwort eintragen'; return; }
+  doConnect();
 });
 
 els.actionBtn.addEventListener('click', async () => {
@@ -534,13 +563,14 @@ els.actionBtn.addEventListener('click', async () => {
 els.forgetBtn.addEventListener('click', () => {
   localStorage.removeItem('scooter_password');
   els.password.value = '';
+  els.passwordSection.classList.add('hidden');
   if (gattServer && gattServer.connected) gattServer.disconnect();
+  els.statusLine.textContent = 'Passwort entfernt.';
 });
 
 function onDisconnected() {
   clearInterval(pollTimer);
   gattServer = null; writeChar = null; notifyChar = null;
-  els.connectBtn.textContent = 'Mit Scooter verbinden';
   els.actionBtn.disabled = true;
   setConnState('idle');
   els.statusLine.textContent = 'Getrennt';
