@@ -306,6 +306,19 @@
   }
   .source-pill:active { background: var(--surface-strong); }
   .source-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-a); box-shadow: 0 0 6px var(--accent-a); flex-shrink: 0; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .beta-pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--danger-a);
+    background: color-mix(in srgb, var(--danger-a) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--danger-a) 38%, transparent);
+    text-decoration: none;
+  }
+  .beta-pill:active { background: color-mix(in srgb, var(--danger-a) 20%, transparent); }
 
   .hidden { display: none !important; }
 </style>
@@ -333,9 +346,12 @@
     </div>
   </header>
 
-  <a class="source-pill reveal" href="https://github.com/andreknieriem/opentier" target="_blank" rel="noopener">
-    <span class="source-dot"></span>Basiert auf OpenTIER — bestätigter Befehlssatz ↗
-  </a>
+  <div class="badge-row reveal">
+    <a class="source-pill" href="https://github.com/andreknieriem/opentier" target="_blank" rel="noopener">
+      <span class="source-dot"></span>Basiert auf OpenTIER ↗
+    </a>
+    <a class="beta-pill" href="test/">Weitere Befehle? → BETA TEST</a>
+  </div>
 
   <div id="notSupported" class="card warn-card hidden reveal reveal-2">
     <p>Dieser Browser unterstützt <strong>Web Bluetooth</strong> nicht.</p>
@@ -391,8 +407,7 @@
   </div>
 
   <p class="footnote">
-    Diese Seite braucht HTTPS (oder localhost), sonst blockiert der Browser Web Bluetooth.<br>
-    Unbestätigte Befehle jenseits von OpenTIER? → <a href="test/" style="color:inherit;">BETA TEST</a>
+    Diese Seite braucht HTTPS (oder localhost), sonst blockiert der Browser Web Bluetooth.
   </p>
 </main>
 
