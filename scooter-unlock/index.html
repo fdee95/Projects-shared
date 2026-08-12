@@ -454,23 +454,29 @@ const Protocol = {
     if (text.includes('+ACK:BKLED,0')) return false;
     return null;
   },
+  // Feldreihenfolge von "+ACK:BKINF,..." bestätigt durch Live-Mitschnitte
+  // im myTIER-Forum (z.B. "+ACK:BKINF,0,21.3,0.00,1634.4,9,57,1$"):
+  //   [0] unklar (vermutlich Flag, evtl. Lichtstatus - unbestätigt)
+  //   [1] Geschwindigkeit km/h
+  //   [2] Trip-km seit Entsperren
+  //   [3] Gesamt-km (Tacho)
+  //   [4] Zähler, erhöht sich pro Poll während der Fahrt - Zweck unklar
+  //   [5] Akkustand %
+  //   [6] Sperrstatus: 0 = gesperrt, 1 = entsperrt
+  // Achtung: umgekehrte Polarität zum BKSCT-Kommando/-ACK oben (dort ist
+  // 0 = entriegelt, 1 = verriegelt).
   parseResponse(text) {
     if (text.includes('+ACK:BKSCT,0')) return { isLocked: false, battery: null };
     if (text.includes('+ACK:BKSCT,1')) return { isLocked: true, battery: null };
-    if (!text.includes(',') || !text.includes('$')) return null;
+    if (!text.includes('+ACK:BKINF,')) return null;
 
-    const clean = text.substring(text.indexOf(':') + 1).replace(/\$/g, '').replace(/\r\n/g, '');
+    const clean = text.substring(text.indexOf('+ACK:BKINF,') + '+ACK:BKINF,'.length)
+      .replace(/\$/g, '').replace(/\r\n/g, '');
     const fields = clean.split(',');
-    if (fields.length < 4) return null;
+    if (fields.length < 7) return null;
 
-    let lockField, batteryField;
-    if (fields.length >= 5) {
-      lockField = fields[4]; batteryField = fields[3];
-    } else {
-      lockField = fields[0]; batteryField = fields[3];
-    }
-    const battery = parseInt(batteryField.trim(), 10);
-    const locked = lockField.trim() === '1' || lockField.trim() === 'L';
+    const battery = parseInt(fields[5].trim(), 10);
+    const locked = fields[6].trim() === '0';
     return { isLocked: locked, battery: isNaN(battery) ? null : battery };
   },
 };

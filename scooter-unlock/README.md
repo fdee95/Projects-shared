@@ -40,31 +40,59 @@ und in der offiziellen App beim Erstpairing eingegeben wurde. Es wird bei
 jedem Kommando im Klartext mitgeschickt — es gibt keine
 Challenge-Response- oder Verschlüsselungsschicht.
 
-Die Statusantwort (`AT+BKINF`) ist eine kommagetrennte `$...$`-Zeile;
-je nach Firmware-Revision steht das Lock-Flag am Anfang oder am Ende der
-Felderliste, daher wertet der Parser beide Layouts aus.
+**Statusantwort (`+ACK:BKINF,...$`)** — Feldreihenfolge bestätigt durch
+Live-Mitschnitte im [myTIER-Forum](https://mytier-forum.de/community/topic/akkustand-via-bluetooth-auslesen/page/3/)
+(z. B. `+ACK:BKINF,0,21.3,0.00,1634.4,9,57,1$`):
+
+| Index | Bedeutung | Beispielwert |
+|---|---|---|
+| 0 | unklar (evtl. Licht-Flag, unbestätigt — s. u.) | `0` |
+| 1 | Geschwindigkeit (km/h) | `21.3` |
+| 2 | Trip-km seit Entsperren | `0.00` |
+| 3 | Gesamtkilometer (Tacho) | `1634.4` |
+| 4 | Zähler, +1 pro Poll während der Fahrt — Zweck unklar | `9` |
+| 5 | Akkustand (%) | `57` |
+| 6 | Sperrstatus: `0` = gesperrt, `1` = entsperrt | `1` |
+
+Achtung, Falle: Die Polarität von Index 6 ist **umgekehrt** zum `BKSCT`-
+Kommando/-ACK (dort ist `0` = entriegelt, `1` = verriegelt). Eine frühere
+Version dieser App hat außerdem die falschen Indizes für Akku/Sperrstatus
+gelesen (Annahme einer variablen Feldreihenfolge, die sich nicht bestätigt
+hat) — das ist inzwischen anhand der obigen Tabelle korrigiert.
+
+Nur Index 5 und 6 werden aktuell in der UI angezeigt; Geschwindigkeit,
+Trip- und Gesamt-km liegen im Rohtext vor, werden aber nicht ausgewertet.
 
 ### Licht (experimentell, Beta)
 
-Im [myTIER-Forum](https://mytier-forum.de/community/topic/akkustand-via-bluetooth-auslesen/page/3/)
-wird zusätzlich ein `AT+BKLED=<passwort>,...$`-Kommando aus dem
-dekompilierten App-Code genannt, das die LED/das Licht ansprechen soll
-([konkreter Post](https://mytier-forum.de/community/reply/3768/)). Weder
-OpenTIER noch der offizielle App-Reverse-Engineering-Stand, auf dem dieses
-Projekt basiert, hatten das bisher implementiert — die Quelle ist ein
-einzelner Forumsbeitrag, nicht verifiziert.
+Ein `AT+BKLED=<passwort>,...$`-Kommando wird in einem
+[myTIER-Forum-Post](https://mytier-forum.de/community/reply/3768/) aus dem
+dekompilierten App-Code erwähnt. Zusätzliche Bestätigung: Ein anderer
+Nutzer im selben Thread hat dort das dekompilierte `VehicleStatus`-Objekt
+der offiziellen App gepostet, das ein Feld `isHeadLampTurnedOn` (boolean)
+enthält — Lichtsteuerung ist also real, nur der genaue Bluetooth-Befehl
+dafür bleibt unbestätigt. Weder OpenTIER noch der Stand, auf dem dieses
+Projekt sonst basiert, hatten `BKLED` implementiert.
 
 Diese App sendet testweise `AT+BKLED=<passwort>,1$` (an) /
 `AT+BKLED=<passwort>,0$` (aus), nach dem Muster von `BKSCT`. **Ob `1`/`0`
-wirklich an/aus bedeuten (oder überhaupt etwas tun), ist nicht bestätigt** —
-einmal am eigenen Scooter ausprobieren. Antwortet der Scooter mit
-`+ACK:BKLED,0` / `+ACK:BKLED,1`, übernimmt die App das als bestätigten
-Zustand; ohne Antwort bleibt es bei der optimistischen lokalen Anzeige.
+wirklich an/aus bedeuten (oder ob der Befehl überhaupt etwas tut), ist
+nicht bestätigt** — einmal am eigenen Scooter ausprobieren. Antwortet der
+Scooter mit `+ACK:BKLED,0` / `+ACK:BKLED,1`, übernimmt die App das als
+bestätigten Zustand; ohne Antwort bleibt es bei der optimistischen
+lokalen Anzeige.
+
+**Offene Spur:** Ein Nutzer hat den Scooter per ESP32 (Standard-AT-BLE-
+Firmware) gescannt und unter dem Service `0x2C00` fünf Characteristics
+gefunden: `0x2C01` (Write, wird von dieser App genutzt), `0x2C10`
+(Notify, wird genutzt) — sowie **`0x2C02`, `0x2C03`, `0x2C04`**, die
+bisher niemand angesprochen hat. Denkbar, dass Licht/weitere Funktionen
+über einen dieser drei Kanäle laufen statt über `0x2C01`. Wer Lust hat,
+das mit nRF Connect zu erkunden: einfach schreiben/lesen und schauen, ob
+eine der drei etwas zurückgibt.
 
 Weitere AT+BK-Befehle (z. B. für Klingel, Geschwindigkeitsbegrenzung oder
-Passwortänderung) konnten bei der Recherche nicht gefunden werden — falls
-jemand mehr aus dem dekompilierten App-Code oder per nRF Connect
-mitschneidet, gerne im Forum-Thread nachlesen/ergänzen.
+Passwortänderung) konnten bei der Recherche nicht gefunden werden.
 
 ## iPhone
 
